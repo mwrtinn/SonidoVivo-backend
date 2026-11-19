@@ -25,3 +25,18 @@ exports.buscarCredencialesPorEmail = async (email) => {
   );
   return rows[0] || null;
 };
+
+exports.listar = async () => {
+  const { rows } = await pool.query(`${SELECT} ORDER BY u.id_usuario`);
+  return rows;
+};
+
+exports.actualizar = async (id, { nombre, rol, activo }) => {
+  const { rowCount } = await pool.query(
+    `UPDATE usuarios SET nombre = COALESCE($2, nombre), activo = COALESCE($3, activo),
+       id_rol = COALESCE((SELECT id_rol FROM roles WHERE nombre = $4), id_rol)
+     WHERE id_usuario = $1`,
+    [id, nombre ?? null, activo ?? null, rol ?? null]
+  );
+  return rowCount ? exports.buscarPorId(id) : null;
+};
