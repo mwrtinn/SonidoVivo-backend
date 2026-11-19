@@ -17,3 +17,11 @@ exports.crear = async ({ nombre, email, passwordHash, rol }) => {
   );
   return exports.buscarPorId(rows[0].id_usuario);
 };
+
+exports.buscarCredencialesPorEmail = async (email) => {
+  const { rows } = await pool.query(
+    'SELECT id_usuario, password_hash, activo FROM usuarios WHERE email = $1',
+    [email]
+  );
+  return rows[0] || null;
+};

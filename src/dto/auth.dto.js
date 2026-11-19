@@ -5,3 +5,8 @@ exports.registroDto = z.object({
   email: z.string().trim().toLowerCase().email('Email inválido').max(150),
   password: z.string().min(8, 'Mínimo 8 caracteres').max(128, 'Máximo 128 caracteres')
 });
+
+exports.loginDto = z.object({
+  email: z.string().trim().toLowerCase().email('Email inválido'),
+  password: z.string().min(1, 'Obligatoria').max(128)
+});
