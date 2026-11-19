@@ -9,8 +9,8 @@ const vigencia = () => process.env.JWT_EXPIRES_IN || '1h';
 // Hash ficticio: se verifica aunque el usuario no exista, para no delatar qué emails están registrados
 const hashFicticio = argon2.hash('contrasena-ficticia', { type: argon2.argon2id });
 
-exports.registrar = async ({ nombre, email, password }) => {
-  const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+exports.registrar = async ({ nombre, email, clave }) => {
+  const passwordHash = await argon2.hash(clave, { type: argon2.argon2id });
   try {
     return await repo.crear({ nombre, email, passwordHash, rol: 'Cliente' });
   } catch (err) {
@@ -19,9 +19,9 @@ exports.registrar = async ({ nombre, email, password }) => {
   }
 };
 
-exports.login = async ({ email, password }) => {
+exports.login = async ({ email, clave }) => {
   const cred = await repo.buscarCredencialesPorEmail(email);
-  const coincide = await argon2.verify(cred ? cred.password_hash : await hashFicticio, password);
+  const coincide = await argon2.verify(cred ? cred.password_hash : await hashFicticio, clave);
   if (!cred || !coincide || !cred.activo) throw new AppError(401, 'Credenciales inválidas');
   const usuario = await repo.buscarPorId(cred.id_usuario);
   const accessToken = jwt.sign({ rol: usuario.rol }, process.env.JWT_SECRET, {
