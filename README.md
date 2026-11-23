@@ -384,7 +384,7 @@ El backend se reparte por funcionalidad completa, desde la ruta hasta la base de
 **prueba de errores y implementaciones de usuarios,autenticaciones y bases de datos**
   **calidad y documentacion** script de pruebas,actualizacion de readme y api**
   **estructura base:** actualizaciones de repositorios,capas(controladores,servicios y repositorios)**
-  * *
+  * 
 
 - **Vicente Vega (`vishoyo`)**
 * **Actualizacion de repositorios scr y pruebas*
