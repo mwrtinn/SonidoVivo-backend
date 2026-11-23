@@ -61,6 +61,10 @@ E=$(llamar GET /usuarios "" "$T_ANA")
 verificar "Cliente no puede listar usuarios" 403 "$E"
 E=$(llamar GET /usuarios)
 verificar "Listar sin token" 401 "$E"
+E=$(llamar GET "/usuarios/$ID_ANA" "" "$T_ANA")
+verificar "Cliente consulta su propia cuenta" 200 "$E"
+E=$(llamar GET "/usuarios/$ID_BETO" "" "$T_ANA")
+verificar "Cliente no puede consultar otra cuenta (id en la URL)" 403 "$E"
 E=$(llamar PATCH "/usuarios/$ID_ANA" '{"nombre":"Ana Editada"}' "$T_ANA")
 verificar "Cliente modifica su propio nombre" 200 "$E"
 E=$(llamar PATCH "/usuarios/$ID_ANA" '{"rol":"Administrador"}' "$T_ANA")
@@ -78,6 +82,17 @@ if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_CLAVE" ]; then
   E=$(llamar GET /auth/me "" "$T_ADM"); ID_ADM=$(campo .id_usuario)
   E=$(llamar GET /usuarios "" "$T_ADM")
   verificar "Administrador lista usuarios" 200 "$E"
+  verificar "El listado trae al menos 3 usuarios" 1 "$([ "$(campo .length)" -ge 3 ] && echo 1 || echo 0)"
+  E=$(llamar GET "/usuarios?rol=Cliente" "" "$T_ADM")
+  verificar "Filtro por rol" 200 "$E"
+  E=$(llamar GET "/usuarios?buscar=beto$SUFIJO" "" "$T_ADM")
+  verificar "Filtro buscar devuelve solo a Beto" 1 "$(campo .length)"
+  E=$(llamar GET "/usuarios?rol=Inexistente" "" "$T_ADM")
+  verificar "Filtro con rol invalido" 400 "$E"
+  E=$(llamar GET "/usuarios/$ID_BETO" "" "$T_ADM")
+  verificar "Administrador consulta a otra persona" 200 "$E"
+  E=$(llamar GET /usuarios/999999 "" "$T_ADM")
+  verificar "Consultar usuario inexistente" 404 "$E"
   E=$(llamar PATCH /usuarios/999999 '{"nombre":"Nadie"}' "$T_ADM")
   verificar "Modificar usuario inexistente" 404 "$E"
   E=$(llamar PATCH /usuarios/abc '{"nombre":"Nadie"}' "$T_ADM")
@@ -85,6 +100,8 @@ if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_CLAVE" ]; then
   E=$(llamar PATCH "/usuarios/$ID_ANA" '{"rol":"Vendedor"}' "$T_ADM")
   verificar "Administrador cambia el rol de otro usuario" 200 "$E"
   verificar "El rol quedo como Vendedor" Vendedor "$(campo .rol)"
+  E=$(llamar PATCH "/usuarios/$ID_ADM" '{"rol":"Cliente"}' "$T_ADM")
+  verificar "Administrador no puede cambiar su propio rol" 409 "$E"
   E=$(llamar DELETE "/usuarios/$ID_ADM" "" "$T_ADM")
   verificar "Administrador no puede desactivarse a si mismo" 409 "$E"
   E=$(llamar DELETE "/usuarios/$ID_BETO" "" "$T_ADM")
@@ -93,6 +110,12 @@ if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_CLAVE" ]; then
   verificar "Beto desactivado ya no inicia sesion" 401 "$E"
   E=$(llamar GET /auth/me "" "$T_BETO")
   verificar "El token anterior de Beto deja de servir" 401 "$E"
+  E=$(llamar GET "/usuarios?activo=false&buscar=beto$SUFIJO" "" "$T_ADM")
+  verificar "Beto aparece entre los usuarios desactivados" 1 "$(campo .length)"
+  E=$(llamar PATCH "/usuarios/$ID_BETO" '{"activo":true}' "$T_ADM")
+  verificar "Administrador reactiva a Beto" 200 "$E"
+  E=$(llamar POST /auth/login "{\"email\":\"beto$SUFIJO@ejemplo.cl\",\"clave\":\"$CLAVE\"}")
+  verificar "Beto reactivado vuelve a iniciar sesion" 200 "$E"
 else
   echo "(Se omiten las pruebas de Administrador: define ADMIN_EMAIL y ADMIN_CLAVE)"
 fi

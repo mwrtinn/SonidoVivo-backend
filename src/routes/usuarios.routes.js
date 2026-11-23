@@ -7,6 +7,8 @@ const router = Router();
 
 router.use(autenticar);
 router.get('/', autorizar('Administrador'), asyncH(controller.listar));
+// El control de propiedad (admin o dueño de la cuenta) está en el controlador
+router.get('/:id', asyncH(controller.obtener));
 router.patch('/:id', asyncH(controller.modificar));
 router.delete('/:id', autorizar('Administrador'), asyncH(controller.desactivar));
 

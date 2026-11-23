@@ -26,8 +26,27 @@ exports.buscarCredencialesPorEmail = async (email) => {
   return rows[0] || null;
 };
 
-exports.listar = async () => {
-  const { rows } = await pool.query(`${SELECT} ORDER BY u.id_usuario`);
+// Escapa los comodines de LIKE para que el texto buscado se trate como texto literal
+const escaparLike = (texto) => texto.replace(/[\\%_]/g, '\\$&');
+
+// Filtros opcionales: rol, activo y buscar (nombre o email). Todos los valores van parametrizados.
+exports.listar = async ({ rol, activo, buscar } = {}) => {
+  const condiciones = [];
+  const valores = [];
+  if (rol !== undefined) {
+    valores.push(rol);
+    condiciones.push(`r.nombre = $${valores.length}`);
+  }
+  if (activo !== undefined) {
+    valores.push(activo);
+    condiciones.push(`u.activo = $${valores.length}`);
+  }
+  if (buscar !== undefined) {
+    valores.push(`%${escaparLike(buscar)}%`);
+    condiciones.push(`(u.nombre ILIKE $${valores.length} OR u.email ILIKE $${valores.length})`);
+  }
+  const where = condiciones.length ? ` WHERE ${condiciones.join(' AND ')}` : '';
+  const { rows } = await pool.query(`${SELECT}${where} ORDER BY u.id_usuario`, valores);
   return rows;
 };
 

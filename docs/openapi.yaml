@@ -5,9 +5,12 @@ info:
   description: >
     API REST del proyecto semestral Sonido Vivo (DSY1104). Autenticación con JWT
     (Authorization: Bearer token). Todos los datos de los ejemplos son ficticios.
+
+    Para probar rutas protegidas: ejecute POST /auth/login, copie el accessToken,
+    presione Authorize y pegue solo el token (sin la palabra Bearer).
 servers:
-  - url: http://localhost:3000/api/v1
-    description: Entorno local
+  - url: /api/v1
+    description: El mismo servidor que sirve esta documentación (local o EC2)
 tags:
   - name: Salud
   - name: Autenticación
@@ -92,26 +95,77 @@ paths:
   /usuarios:
     get:
       tags: [Usuarios]
-      summary: Lista los usuarios (solo Administrador)
+      summary: Lista los usuarios, con filtros opcionales (solo Administrador)
       security:
         - bearerAuth: []
+      parameters:
+        - name: rol
+          in: query
+          required: false
+          description: Devuelve solo los usuarios con ese rol
+          schema:
+            type: string
+            enum: [Administrador, Vendedor, Cliente]
+        - name: activo
+          in: query
+          required: false
+          description: true devuelve las cuentas activas; false, las desactivadas
+          schema:
+            type: boolean
+        - name: buscar
+          in: query
+          required: false
+          description: Texto contenido en el nombre o en el email (sin distinguir mayúsculas)
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            example: ana
       responses:
         '200':
-          description: Lista de usuarios
+          description: Lista de usuarios (arreglo vacío si ninguno coincide)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/Validacion'
         '401':
           $ref: '#/components/responses/NoAutenticado'
         '403':
           $ref: '#/components/responses/SinPermiso'
   /usuarios/{id}:
+    get:
+      tags: [Usuarios]
+      summary: Consulta un usuario. El Administrador consulta a cualquiera; los demás, solo su propia cuenta.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdUsuario'
+      responses:
+        '200':
+          description: Datos del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
     patch:
       tags: [Usuarios]
       summary: Modifica un usuario. Cada persona edita solo su nombre; el Administrador también el rol y el estado.
+      description: >
+        Envíe solo los campos que desea cambiar. Un usuario que no es Administrador recibe 403
+        si intenta modificar otra cuenta o enviar rol o activo. Responde 409 si el Administrador
+        intenta desactivar su propia cuenta o cambiar su propio rol.
       security:
         - bearerAuth: []
       parameters:
@@ -142,6 +196,11 @@ paths:
     delete:
       tags: [Usuarios]
       summary: Desactiva un usuario (borrado lógico, solo Administrador)
+      description: >
+        No borra la fila: marca activo = false. La cuenta desactivada no puede iniciar sesión
+        y sus tokens ya emitidos dejan de servir de inmediato. Para reactivarla, el
+        Administrador usa PATCH con {"activo": true}. El Administrador no puede desactivar
+        su propia cuenta.
       security:
         - bearerAuth: []
       parameters:
@@ -218,18 +277,23 @@ components:
     ActualizarUsuarioRequest:
       type: object
       minProperties: 1
+      example:
+        nombre: Ana Editada
       properties:
         nombre:
           type: string
           minLength: 2
           maxLength: 100
+          example: Ana Editada
         rol:
           type: string
           enum: [Administrador, Vendedor, Cliente]
           description: Solo lo puede enviar el Administrador
+          example: Vendedor
         activo:
           type: boolean
           description: Solo lo puede enviar el Administrador
+          example: true
     Usuario:
       type: object
       description: Nunca incluye la contraseña ni su hash
@@ -257,10 +321,12 @@ components:
       properties:
         mensaje:
           type: string
+          example: Usuario no encontrado
         detalles:
           type: array
           items:
             type: string
+          example: []
   responses:
     Validacion:
       description: Datos inválidos o identificador mal formado
@@ -287,7 +353,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Conflicto:
-      description: Conflicto con una restricción (email repetido, desactivarse a sí mismo)
+      description: Conflicto con una restricción (email repetido, desactivar o cambiar el rol de la propia cuenta del Administrador)
       content:
         application/json:
           schema:
