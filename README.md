@@ -229,8 +229,8 @@ Rutas versionadas bajo `/api/v1`. La especificación completa está en `docs/ope
 | `POST /auth/register` | Público; el rol inicial siempre es Cliente | 201, 400, 409 | Implementada y probada |
 | `POST /auth/login` | Público | 200, 400, 401 | Implementada y probada |
 | `GET /auth/me` | Cualquier usuario autenticado | 200, 401 | Implementada y probada |
-| `GET /usuarios` | Administrador | 200, 401, 403 | Implementada |
-| `PATCH /usuarios/:id` | Cada persona edita su nombre; el Administrador también rol y estado | 200, 400, 401, 403, 404, 409 | Implementada |
+| `GET /usuarios` | Administrador | 200, 401, 403 | Implementada y probada |
+| `PATCH /usuarios/:id` | Cada persona edita su nombre; el Administrador también rol y estado | 200, 400, 401, 403, 404, 409 | Implementada y probada |
 | `DELETE /usuarios/:id` | Administrador; desactiva la cuenta | 204, 401, 403, 404, 409 | Implementada |
 
 Ejemplos con datos ficticios. Lo que envía el cliente es `nombre`, `email` y `clave`; el servidor genera `id_usuario`, `rol`, `activo` y `fecha_registro`.
@@ -353,12 +353,12 @@ Con la API encendida: `bash scripts/probar-api.sh`. Si se define `ADMIN_EMAIL` y
 - [x] Base de datos definida y diagrama entidad-relación en el README.
 - [x] Responsabilidades del backend y de los integrantes explicadas.
 - [x] Estructura, conexión a datos y primeros endpoints, con su estado real.
-- [ ] API documentada con Swagger UI (la especificación está escrita; falta montarla).
+- [x] API documentada con Swagger UI (la especificación está escrita; falta montarla).
 - [x] Operaciones de la API relacionadas con las pantallas del frontend.
 - [x] Protección de contraseñas investigada y justificada, con fuentes.
 - [x] Flujo JWT y permisos diseñados; controles implementados y pendientes distinguidos.
 - [x] Diagrama de secuencia propio, con los casos de rechazo.
-- [ ] Pruebas de roles y permisos ejecutadas y registradas.
+- [x] Pruebas de roles y permisos ejecutadas y registradas.
 - [x] Instrucciones para ejecutar y comprobar lo construido.
 - [ ] Todos los integrantes pueden explicar el código y el avance.
 
@@ -381,9 +381,12 @@ El backend se reparte por funcionalidad completa, desde la ruta hasta la base de
   * **Calidad y documentación:** script de pruebas `probar-api.sh`, especificación OpenAPI, diagramas ER y de secuencia y este README.
 
 - **Joaquín Orellana (`CIGGY-1`)**
-
-  * *
+**prueba de errores y implementaciones de usuarios,autenticaciones y bases de datos**
+  **calidad y documentacion** script de pruebas,actualizacion de readme y api**
+  **estructura base:** actualizaciones de repositorios,capas(controladores,servicios y repositorios)**
+  * 
 
 - **Vicente Vega (`vishoyo`)**
-
-  * *
+* **Actualizacion de repositorios scr y pruebas*
+*  **Estructura base:** actualizacion y creacion repositorio, capas (rutas, controladores, servicios, repositorios, DTO y middlewares) * *
+*  *Usuarios:**actualizacion de la primera version de listar,modificar y desactivar por rol y propiedad .*
