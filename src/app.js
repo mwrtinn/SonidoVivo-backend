@@ -11,8 +11,13 @@ const app = express();
 app.use(helmet({
   contentSecurityPolicy: { directives: { 'upgrade-insecure-requests': null } }
 }));
+const origenesPermitidos = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map(origen => origen.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : false
+  origin: origenesPermitidos
 }));
 app.use(express.json());
 
@@ -23,3 +28,4 @@ app.use((req, res) => res.status(404).json({ mensaje: 'Ruta no encontrada' }));
 app.use(errorHandler);
 
 module.exports = app;
+
