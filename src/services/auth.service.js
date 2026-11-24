@@ -9,10 +9,11 @@ const vigencia = () => process.env.JWT_EXPIRES_IN || '1h';
 // Hash ficticio: se verifica aunque el usuario no exista, para no delatar qué emails están registrados
 const hashFicticio = argon2.hash('contrasena-ficticia', { type: argon2.argon2id });
 
-exports.registrar = async ({ nombre, email, clave }) => {
+// El registro público no pasa rol (queda Cliente); solo el Administrador, vía POST /usuarios, elige otro
+exports.registrar = async ({ nombre, email, clave }, rol = 'Cliente') => {
   const passwordHash = await argon2.hash(clave, { type: argon2.argon2id });
   try {
-    return await repo.crear({ nombre, email, passwordHash, rol: 'Cliente' });
+    return await repo.crear({ nombre, email, passwordHash, rol });
   } catch (err) {
     if (err.code === '23505') throw new AppError(409, 'El email ya está registrado');
     throw err;

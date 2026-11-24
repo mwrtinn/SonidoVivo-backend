@@ -1,6 +1,12 @@
 const { z } = require('zod');
+const { registroDto } = require('./auth.dto');
 
 const ROLES = ['Administrador', 'Vendedor', 'Cliente'];
+
+// POST /usuarios (Administrador): mismos campos del registro público, más el rol elegido
+exports.crearUsuarioDto = registroDto.extend({
+  rol: z.enum(ROLES, { message: 'Rol inválido' })
+});
 
 exports.listarUsuariosQueryDto = z.object({
   rol: z.enum(ROLES, { message: 'Rol inválido' }).optional(),

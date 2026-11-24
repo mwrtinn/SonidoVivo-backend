@@ -1,6 +1,7 @@
 const repo = require('../repositories/usuarios.repository');
 const AppError = require('../utils/AppError');
-const { actualizarUsuarioDto, listarUsuariosQueryDto } = require('../dto/usuarios.dto');
+const authService = require('../services/auth.service');
+const { actualizarUsuarioDto, listarUsuariosQueryDto, crearUsuarioDto } = require('../dto/usuarios.dto');
 
 const MAX_ID = 2147483647; // límite del tipo integer de PostgreSQL
 
@@ -17,6 +18,12 @@ const exigirAdminOPropietario = (req, id) => {
   if (!esAdministrador(req) && id !== req.usuario.id_usuario) {
     throw new AppError(403, 'No tiene permisos para esta acción');
   }
+};
+
+// POST /usuarios (solo Administrador, se controla en la ruta): crea un usuario con el rol indicado
+exports.crear = async (req, res) => {
+  const { rol, ...datos } = crearUsuarioDto.parse(req.body);
+  res.status(201).json(await authService.registrar(datos, rol));
 };
 
 // GET /usuarios?rol=&activo=&buscar= (solo Administrador, se controla en la ruta)
