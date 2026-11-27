@@ -4,10 +4,12 @@ info:
   version: 1.0.0
   description: >
     API REST del proyecto semestral Sonido Vivo (DSY1104). Autenticación con JWT
-    (Authorization: Bearer token). Todos los datos de los ejemplos son ficticios.
+    (Authorization: Bearer token). Todos los datos de los ejemplos son
+    ficticios.
 
-    Para probar rutas protegidas: ejecute POST /auth/login, copie el accessToken,
-    presione Authorize y pegue solo el token (sin la palabra Bearer).
+    Para probar rutas protegidas: ejecute POST /auth/login, copie el
+    accessToken, presione Authorize y pegue solo el token (sin la palabra
+    Bearer).
 servers:
   - url: /api/v1
     description: El mismo servidor que sirve esta documentación (local o EC2)
@@ -15,10 +17,12 @@ tags:
   - name: Salud
   - name: Autenticación
   - name: Usuarios
+  - name: Productos
+    description: Gestión del catálogo de SonidoVivo
 paths:
   /health:
     get:
-      tags: [Salud]
+      tags: [ Salud ]
       summary: Estado del servicio
       responses:
         '200':
@@ -33,7 +37,7 @@ paths:
                     example: ok
   /auth/register:
     post:
-      tags: [Autenticación]
+      tags: [ Autenticación ]
       summary: Registra un usuario. El rol inicial siempre es Cliente.
       requestBody:
         required: true
@@ -54,7 +58,7 @@ paths:
           $ref: '#/components/responses/Conflicto'
   /auth/login:
     post:
-      tags: [Autenticación]
+      tags: [ Autenticación ]
       summary: Inicia sesión y entrega un JWT
       requestBody:
         required: true
@@ -72,14 +76,15 @@ paths:
         '400':
           $ref: '#/components/responses/Validacion'
         '401':
-          description: Credenciales inválidas (mensaje genérico, no revela si la cuenta existe)
+          description: Credenciales inválidas (mensaje genérico, no revela si la cuenta
+            existe)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
   /auth/me:
     get:
-      tags: [Autenticación]
+      tags: [ Autenticación ]
       summary: Datos del usuario autenticado
       security:
         - bearerAuth: []
@@ -94,7 +99,7 @@ paths:
           $ref: '#/components/responses/NoAutenticado'
   /usuarios:
     get:
-      tags: [Usuarios]
+      tags: [ Usuarios ]
       summary: Lista los usuarios, con filtros opcionales (solo Administrador)
       security:
         - bearerAuth: []
@@ -105,7 +110,7 @@ paths:
           description: Devuelve solo los usuarios con ese rol
           schema:
             type: string
-            enum: [Administrador, Vendedor, Cliente]
+            enum: [ Administrador, Vendedor, Cliente ]
         - name: activo
           in: query
           required: false
@@ -115,7 +120,8 @@ paths:
         - name: buscar
           in: query
           required: false
-          description: Texto contenido en el nombre o en el email (sin distinguir mayúsculas)
+          description: Texto contenido en el nombre o en el email (sin distinguir
+            mayúsculas)
           schema:
             type: string
             minLength: 1
@@ -137,7 +143,7 @@ paths:
         '403':
           $ref: '#/components/responses/SinPermiso'
     post:
-      tags: [Usuarios]
+      tags: [ Usuarios ]
       summary: Crea un usuario con el rol indicado (solo Administrador)
       security:
         - bearerAuth: []
@@ -164,8 +170,9 @@ paths:
           $ref: '#/components/responses/Conflicto'
   /usuarios/{id}:
     get:
-      tags: [Usuarios]
-      summary: Consulta un usuario. El Administrador consulta a cualquiera; los demás, solo su propia cuenta.
+      tags: [ Usuarios ]
+      summary: Consulta un usuario. El Administrador consulta a cualquiera; los demás,
+        solo su propia cuenta.
       security:
         - bearerAuth: []
       parameters:
@@ -186,12 +193,14 @@ paths:
         '404':
           $ref: '#/components/responses/NoEncontrado'
     patch:
-      tags: [Usuarios]
-      summary: Modifica un usuario. Cada persona edita solo su nombre; el Administrador también el rol y el estado.
+      tags: [ Usuarios ]
+      summary: Modifica un usuario. Cada persona edita solo su nombre; el
+        Administrador también el rol y el estado.
       description: >
-        Envíe solo los campos que desea cambiar. Un usuario que no es Administrador recibe 403
-        si intenta modificar otra cuenta o enviar rol o activo. Responde 409 si el Administrador
-        intenta desactivar su propia cuenta o cambiar su propio rol.
+        Envíe solo los campos que desea cambiar. Un usuario que no es
+        Administrador recibe 403 si intenta modificar otra cuenta o enviar rol o
+        activo. Responde 409 si el Administrador intenta desactivar su propia
+        cuenta o cambiar su propio rol.
       security:
         - bearerAuth: []
       parameters:
@@ -220,13 +229,13 @@ paths:
         '409':
           $ref: '#/components/responses/Conflicto'
     delete:
-      tags: [Usuarios]
+      tags: [ Usuarios ]
       summary: Desactiva un usuario (borrado lógico, solo Administrador)
       description: >
-        No borra la fila: marca activo = false. La cuenta desactivada no puede iniciar sesión
-        y sus tokens ya emitidos dejan de servir de inmediato. Para reactivarla, el
-        Administrador usa PATCH con {"activo": true}. El Administrador no puede desactivar
-        su propia cuenta.
+        No borra la fila: marca activo = false. La cuenta desactivada no puede
+        iniciar sesión y sus tokens ya emitidos dejan de servir de inmediato.
+        Para reactivarla, el Administrador usa PATCH con {"activo": true}. El
+        Administrador no puede desactivar su propia cuenta.
       security:
         - bearerAuth: []
       parameters:
@@ -242,6 +251,247 @@ paths:
           $ref: '#/components/responses/NoEncontrado'
         '409':
           $ref: '#/components/responses/Conflicto'
+  /productos:
+    get:
+      tags:
+        - Productos
+      summary: Listar productos activos
+      security: []
+      responses:
+        "200":
+          description: Listado de productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductoRespuesta"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+    post:
+      tags:
+        - Productos
+      summary: Crear producto
+      description: Operación exclusiva del Administrador.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoCreacion"
+      responses:
+        "201":
+          description: Producto creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoRespuesta"
+        "400":
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "401":
+          description: Autenticación requerida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "403":
+          description: Permisos insuficientes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "409":
+          description: Código de producto duplicado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+  /productos/admin:
+    get:
+      tags:
+        - Productos
+      summary: Listar todos los productos
+      description: Incluye productos activos e inactivos.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Listado administrativo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductoRespuesta"
+        "401":
+          description: Autenticación requerida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "403":
+          description: Permisos insuficientes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+  /productos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        example: 1
+    get:
+      tags:
+        - Productos
+      summary: Obtener producto por ID
+      security: []
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoRespuesta"
+        "400":
+          description: ID inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "404":
+          description: Producto no encontrado o inactivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+    patch:
+      tags:
+        - Productos
+      summary: Modificar o reactivar producto
+      description: Operación exclusiva del Administrador.
+      security: &a1
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoEdicion"
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoRespuesta"
+        "400":
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "401":
+          description: Autenticación requerida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "403":
+          description: Permisos insuficientes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "404":
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "409":
+          description: Código duplicado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+    delete:
+      tags:
+        - Productos
+      summary: Desactivar producto
+      description: Eliminación lógica. No elimina el registro.
+      security: *a1
+      responses:
+        "204":
+          description: Producto desactivado
+        "400":
+          description: ID inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "401":
+          description: Autenticación requerida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "403":
+          description: Permisos insuficientes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "404":
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductoError"
 components:
   securitySchemes:
     bearerAuth:
@@ -260,7 +510,7 @@ components:
   schemas:
     RegistroRequest:
       type: object
-      required: [nombre, email, clave]
+      required: [ nombre, email, clave ]
       properties:
         nombre:
           type: string
@@ -279,7 +529,7 @@ components:
           example: Clave12345
     LoginRequest:
       type: object
-      required: [email, clave]
+      required: [ email, clave ]
       properties:
         email:
           type: string
@@ -302,7 +552,7 @@ components:
           example: 1h
     CrearUsuarioRequest:
       type: object
-      required: [nombre, email, clave, rol]
+      required: [ nombre, email, clave, rol ]
       properties:
         nombre:
           type: string
@@ -321,7 +571,7 @@ components:
           example: Clave12345
         rol:
           type: string
-          enum: [Administrador, Vendedor, Cliente]
+          enum: [ Administrador, Vendedor, Cliente ]
           example: Vendedor
     ActualizarUsuarioRequest:
       type: object
@@ -336,7 +586,7 @@ components:
           example: Ana Editada
         rol:
           type: string
-          enum: [Administrador, Vendedor, Cliente]
+          enum: [ Administrador, Vendedor, Cliente ]
           description: Solo lo puede enviar el Administrador
           example: Vendedor
         activo:
@@ -376,6 +626,186 @@ components:
           items:
             type: string
           example: []
+    ProductoCreacion:
+      type: object
+      required:
+        - codigo
+        - categoria
+        - nombre
+        - precio
+      properties:
+        codigo:
+          type: string
+          maxLength: 30
+          example: PRUEBA001
+        categoria:
+          type: string
+          maxLength: 100
+          example: Accesorios
+        nombre:
+          type: string
+          maxLength: 150
+          example: Producto de prueba
+        marca:
+          type: string
+          nullable: true
+          maxLength: 100
+        modelo:
+          type: string
+          nullable: true
+          maxLength: 100
+        stock:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          example: 10
+        precio:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          example: 19990
+        descripcion:
+          type: string
+          nullable: true
+          maxLength: 10000
+        imagen:
+          type: string
+          nullable: true
+          maxLength: 2000
+        enOferta:
+          type: boolean
+          example: false
+        descuento:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 0
+        activo:
+          type: boolean
+          example: true
+    ProductoEdicion:
+      type: object
+      minProperties: 1
+      properties:
+        codigo:
+          type: string
+          maxLength: 30
+          example: PRUEBA001
+        categoria:
+          type: string
+          maxLength: 100
+          example: Accesorios
+        nombre:
+          type: string
+          maxLength: 150
+          example: Producto de prueba
+        marca:
+          type: string
+          nullable: true
+          maxLength: 100
+        modelo:
+          type: string
+          nullable: true
+          maxLength: 100
+        stock:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          example: 10
+        precio:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          example: 19990
+        descripcion:
+          type: string
+          nullable: true
+          maxLength: 10000
+        imagen:
+          type: string
+          nullable: true
+          maxLength: 2000
+        enOferta:
+          type: boolean
+          example: false
+        descuento:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 0
+        activo:
+          type: boolean
+          example: true
+    ProductoRespuesta:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        codigo:
+          type: string
+          maxLength: 30
+          example: PRUEBA001
+        categoria:
+          type: string
+          maxLength: 100
+          example: Accesorios
+        nombre:
+          type: string
+          maxLength: 150
+          example: Producto de prueba
+        marca:
+          type: string
+          nullable: true
+          maxLength: 100
+        modelo:
+          type: string
+          nullable: true
+          maxLength: 100
+        stock:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          example: 10
+        precio:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          example: 19990
+        descripcion:
+          type: string
+          nullable: true
+          maxLength: 10000
+        imagen:
+          type: string
+          nullable: true
+          maxLength: 2000
+        enOferta:
+          type: boolean
+          example: false
+        descuento:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 0
+        activo:
+          type: boolean
+          example: true
+        fecha_creacion:
+          type: string
+          format: date-time
+        fecha_actualizacion:
+          type: string
+          format: date-time
+    ProductoError:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: string
   responses:
     Validacion:
       description: Datos inválidos o identificador mal formado
@@ -402,7 +832,8 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Conflicto:
-      description: Conflicto con una restricción (email repetido, desactivar o cambiar el rol de la propia cuenta del Administrador)
+      description: Conflicto con una restricción (email repetido, desactivar o cambiar
+        el rol de la propia cuenta del Administrador)
       content:
         application/json:
           schema:
