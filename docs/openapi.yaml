@@ -19,6 +19,8 @@ tags:
   - name: Usuarios
   - name: Productos
     description: Gestión del catálogo de SonidoVivo
+  - name: Pedidos
+    description: Registro, consulta y administración de pedidos.
 paths:
   /health:
     get:
@@ -492,6 +494,220 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductoError"
+  /pedidos:
+    get:
+      tags:
+        - Pedidos
+      summary: Listar pedidos
+      description: "Cliente: consulta únicamente sus pedidos. Administrador y
+        Vendedor: consultan todos los pedidos."
+      security: &a2
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Listado de pedidos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PedidoRespuesta"
+        "401":
+          description: Token ausente, inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "403":
+          description: No tiene permisos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+    post:
+      tags:
+        - Pedidos
+      summary: Crear pedido
+      description: Exclusivo del Cliente. Registra el pedido, calcula precios y
+        descuentos, valida stock y descuenta existencias en una única
+        transacción.
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PedidoCreacion"
+      responses:
+        "201":
+          description: Pedido registrado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoDetalleRespuesta"
+        "400":
+          description: Datos del pedido inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "401":
+          description: Token ausente, inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "403":
+          description: Solo los clientes pueden crear pedidos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "409":
+          description: Stock insuficiente o producto no disponible.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+  /pedidos/{id}:
+    get:
+      tags:
+        - Pedidos
+      summary: Consultar detalle de pedido
+      description: "Cliente: solo pedidos propios. Administrador y Vendedor: cualquier
+        pedido."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del pedido.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+      responses:
+        "200":
+          description: Detalle del pedido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoDetalleRespuesta"
+        "400":
+          description: ID del pedido inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "401":
+          description: Token ausente, inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "403":
+          description: No tiene permisos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "404":
+          description: Pedido inexistente o no pertenece al cliente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+  /pedidos/{id}/estado:
+    patch:
+      tags:
+        - Pedidos
+      summary: Cambiar estado del pedido
+      description: |-
+        Exclusivo de Administrador y Vendedor.
+        Despacho: En preparación → Enviado → Entregado.
+        Retiro: En preparación → Listo para retiro → Entregado.
+        Solo se puede cancelar desde En preparación.
+        La cancelación restaura el stock una única vez.
+        Entregado y Cancelado son estados finales.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del pedido.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PedidoCambioEstado"
+      responses:
+        "200":
+          description: Estado actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoDetalleRespuesta"
+        "400":
+          description: ID o estado inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "401":
+          description: Token ausente, inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "403":
+          description: No tiene permisos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "404":
+          description: Pedido no encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "409":
+          description: Transición de estado no permitida o conflicto de stock.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoError"
 components:
   securitySchemes:
     bearerAuth:
@@ -798,6 +1014,188 @@ components:
           type: string
           format: date-time
     ProductoError:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: string
+    PedidoItemCreacion:
+      type: object
+      required:
+        - id_producto
+        - cantidad
+      properties:
+        id_producto:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 1
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 2
+    PedidoCreacion:
+      type: object
+      description: El usuario se obtiene del JWT. Los precios y totales se calculan en
+        el servidor.
+      required:
+        - nombre
+        - email
+        - telefono
+        - entrega
+        - items
+      properties:
+        nombre:
+          type: string
+          maxLength: 150
+          example: Cliente Prueba
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          example: prueba01@ejemplo.cl
+        telefono:
+          type: string
+          maxLength: 30
+          example: "912345678"
+        entrega:
+          type: string
+          enum:
+            - despacho
+            - retiro
+          example: retiro
+        direccion:
+          type: string
+          maxLength: 500
+          description: Obligatoria para despacho a domicilio.
+          example: ""
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/PedidoItemCreacion"
+      example:
+        nombre: Cliente Prueba
+        email: prueba01@ejemplo.cl
+        telefono: "912345678"
+        entrega: retiro
+        direccion: ""
+        items:
+          - id_producto: 1
+            cantidad: 2
+    PedidoCambioEstado:
+      type: object
+      required:
+        - estado
+      properties:
+        estado:
+          type: string
+          enum:
+            - En preparación
+            - Enviado
+            - Listo para retiro
+            - Entregado
+            - Cancelado
+          example: Listo para retiro
+    PedidoItemRespuesta:
+      type: object
+      properties:
+        id:
+          type: integer
+        id_producto:
+          type: integer
+        codigo:
+          type: string
+          example: GA001
+        nombre:
+          type: string
+          example: Guitarra Acústica Folk
+        cantidad:
+          type: integer
+          example: 2
+        precio:
+          type: integer
+          example: 110492
+        precio_unitario:
+          type: integer
+          example: 110492
+        subtotal:
+          type: integer
+          format: int64
+          example: 220984
+    PedidoRespuesta:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        id_pedido:
+          type: integer
+          example: 1
+        id_usuario:
+          oneOf:
+            - type: integer
+            - type: string
+        nombre:
+          type: string
+          maxLength: 150
+          example: Cliente Prueba
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          example: prueba01@ejemplo.cl
+        telefono:
+          type: string
+          maxLength: 30
+          example: "912345678"
+        entrega:
+          type: string
+          enum:
+            - despacho
+            - retiro
+          example: retiro
+        direccion:
+          type: string
+          maxLength: 500
+          description: Obligatoria para despacho a domicilio.
+          example: ""
+        estado:
+          type: string
+          enum:
+            - En preparación
+            - Enviado
+            - Listo para retiro
+            - Entregado
+            - Cancelado
+          example: En preparación
+        total:
+          type: integer
+          format: int64
+          example: 220984
+        fecha:
+          type: string
+          format: date-time
+        fecha_actualizacion:
+          type: string
+          format: date-time
+    PedidoDetalleRespuesta:
+      allOf:
+        - $ref: "#/components/schemas/PedidoRespuesta"
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/PedidoItemRespuesta"
+    PedidoError:
       type: object
       properties:
         mensaje:
